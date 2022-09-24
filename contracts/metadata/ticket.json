@@ -1,0 +1,15 @@
+{
+    "name":"Ticket",
+    "description":"This ticket grants you access to the coresponding event",
+
+    "image":"https://ipfs.io/ipfs/QmTq2k1AJHYNVxW2ZSDHrUqGrCmWbNTcrvHBJNWPZ1S3KR",
+    "attributes":[
+        
+        {
+            "trait_type": "Validness", 
+            "value": "Valid"
+          }
+
+    ]
+
+}

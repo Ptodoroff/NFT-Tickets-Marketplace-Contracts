@@ -27,7 +27,7 @@ contract EventContract is ERC721URIStorage {
 
 
 
-constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
+constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string memory _symbol,uint _eventDuration) ERC721(_name, _symbol) {
     this_event = Event (
         payable(msg.sender),
         _symbol,
@@ -35,7 +35,7 @@ constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string m
         m_totalSupply,
         _priceInEth,
         block.timestamp,
-        block.timestamp +172800,
+        block.timestamp + _eventDuration,
         address(this)
     );
  
@@ -46,13 +46,13 @@ constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string m
 }
 
 
-function mint (string memory tokenURI) public payable returns (uint){
+function mint () public payable returns (uint){
     uint256 newItemId = _tokenIds.current();
-    require (newItemId <= totalSupply, "Tickets for this event are sold out.");
+    require (newItemId < totalSupply, "Tickets for this event are sold out.");
     require (block.timestamp < this_event.endDate, "Ticket sale for this event has ended.");
     require (msg.value == this_event.priceInEth, "You must pay the exact ticket price.");
     _mint(msg.sender, newItemId);
-    _setTokenURI(newItemId, tokenURI);
+    _setTokenURI(newItemId, "https://ipfs.io/ipfs/QmPhtX9KpJQtRcnQcdQUf2qM8i6RJ5kitqH9yL3cCfEBNf");
     _tokenIds.increment();                                          /// tokenId should be the next Id from the counter
     return newItemId;
 //erc721 mint
@@ -63,9 +63,13 @@ function mint (string memory tokenURI) public payable returns (uint){
 //function is declared external - cannot be called from the factory contract !
 function withdrawFunds () external payable  {
 require (msg.sender == this_event.organiser , "Only the organiser of the event can call this function!");
-require (this_event.endDate < block.timestamp, "The organiser cannot withdraw funds before the event has consluded.");
+require (this_event.endDate < block.timestamp, "The organiser cannot withdraw funds before the event has concluded.");
 this_event.organiser.transfer(address(this).balance);
 
+}
+
+function currentEventRevenue () public view returns (uint) {
+    return address(this).balance;
 }
 
 }
