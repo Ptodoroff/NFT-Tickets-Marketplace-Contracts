@@ -1,5 +1,10 @@
 pragma solidity 0.8.17;  //locked pragma because of Secureum's recommendations. I must explain it.
 
+
+// for the randonmness - Chainlink's VRF function will be implemented. There will be a number generator function 
+// the number generated will represent the winning tokenID. The last winning ticket will be then minted to the winner
+
+
 // idea : I should format all comments in natspec for better look
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
@@ -48,7 +53,7 @@ constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string m
 
 function mint () public payable returns (uint){
     uint256 newItemId = _tokenIds.current();
-    require (newItemId < totalSupply, "Tickets for this event are sold out.");
+    require (newItemId < totalSupply, "Tickets for this event are sold out.");  
     require (block.timestamp < this_event.endDate, "Ticket sale for this event has ended.");
     require (msg.value == this_event.priceInEth, "You must pay the exact ticket price.");
     _mint(msg.sender, newItemId);
@@ -58,6 +63,15 @@ function mint () public payable returns (uint){
 //erc721 mint
 }
 
+
+function mintToWinner (uint winningTokenId) public payable {
+    uint256 newItemId = _tokenIds.current();
+    require (msg.sender == this_event.organiser, " Only the event organiser can distribut the winning ticket to the winner.");
+    _mint(msg.sender, newItemId);
+    _setTokenURI(newItemId, "https://ipfs.io/ipfs/QmPhtX9KpJQtRcnQcdQUf2qM8i6RJ5kitqH9yL3cCfEBNf");
+    _tokenIds.increment();                                          
+
+}
 
 //contract is payable so that the creator of the event could withdraw the revenue from the tickets
 //function is declared external - cannot be called from the factory contract !
