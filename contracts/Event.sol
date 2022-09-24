@@ -1,34 +1,71 @@
-// SPDX-License-Identifier: UNLICENSED
-pragma solidity ^0.8.9;
+pragma solidity 0.8.17;  //locked pragma because of Secureum's recommendations. I must explain it.
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
+// idea : I should format all comments in natspec for better look
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
+//counters should me imported
+//ownable as well, or maybe i could create emy own modifier since it would be only one
 
-contract Lock {
-    uint public unlockTime;
-    address payable public owner;
 
-    event Withdrawal(uint amount, uint when);
+contract EventContract is ERC721URIStorage {
+    using Counters for Counters.Counter;
+    Counters.Counter private _tokenIds;       // a variable to store the current tokenId that is to be minted
+    uint totalSupply;
 
-    constructor(uint _unlockTime) payable {
-        require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
-        );
-
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+    struct Event {
+        address payable organiser;                      //payable so that he can withdraw funds 
+        string symbol;
+        string eventName;
+        uint _totalSupply;
+        uint priceInEth;
+        uint startDate;
+        uint endDate;
+        address  eventAddress;
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    Event this_event;
 
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
 
-        emit Withdrawal(address(this).balance, block.timestamp);
 
-        owner.transfer(address(this).balance);
-    }
+constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string memory _symbol) ERC721(_name, _symbol) {
+    this_event = Event (
+        payable(msg.sender),
+        _symbol,
+        _name,
+        m_totalSupply,
+        _priceInEth,
+        block.timestamp,
+        block.timestamp +172800,
+        address(this)
+    );
+ 
+
+    totalSupply=m_totalSupply;
+   // each event lasts for two days
+    // the event address should point to the address of the newly created event;
+}
+
+
+function mint (string memory tokenURI) public payable returns (uint){
+    uint256 newItemId = _tokenIds.current();
+    require (newItemId <= totalSupply, "Tickets for this event are sold out.");
+    require (block.timestamp < this_event.endDate, "Ticket sale for this event has ended.");
+    require (msg.value == this_event.priceInEth, "You must pay the exact ticket price.");
+    _mint(msg.sender, newItemId);
+    _setTokenURI(newItemId, tokenURI);
+    _tokenIds.increment();                                          /// tokenId should be the next Id from the counter
+    return newItemId;
+//erc721 mint
+}
+
+
+//contract is payable so that the creator of the event could withdraw the revenue from the tickets
+//function is declared external - cannot be called from the factory contract !
+function withdrawFunds () external payable  {
+require (msg.sender == this_event.organiser , "Only the organiser of the event can call this function!");
+require (this_event.endDate < block.timestamp, "The organiser cannot withdraw funds before the event has consluded.");
+this_event.organiser.transfer(address(this).balance);
+
+}
+
 }
