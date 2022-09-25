@@ -1,3 +1,4 @@
+ //SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.17;  //locked pragma because of Secureum's recommendations. I must explain it.
 
 
@@ -15,10 +16,11 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract EventContract is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;       // a variable to store the current tokenId that is to be minted
-    uint totalSupply;
+    uint public totalSupply;
+    address payable public eventOrganiser;
 
-    struct Event {
-        address payable organiser;                      //payable so that he can withdraw funds 
+    struct  Event {
+        address  payable  organiser;                      //payable so that he can withdraw funds 
         string symbol;
         string eventName;
         uint _totalSupply;
@@ -32,9 +34,9 @@ contract EventContract is ERC721URIStorage {
 
 
 
-constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string memory _symbol,uint _eventDuration) ERC721(_name, _symbol) {
+constructor (address payable _organiser, uint m_totalSupply, uint _priceInEth, string memory _name, string memory _symbol,uint _eventDuration) ERC721(_name, _symbol) {
     this_event = Event (
-        payable(msg.sender),
+        _organiser,
         _symbol,
         _name,
         m_totalSupply,
@@ -46,6 +48,7 @@ constructor (uint m_totalSupply, uint _priceInEth, string memory _name, string m
  
 
     totalSupply=m_totalSupply;
+    eventOrganiser=_organiser;
    // each event lasts for two days
     // the event address should point to the address of the newly created event;
 }
@@ -66,8 +69,8 @@ function mint () public payable returns (uint){
 
 function mintToWinner (uint winningTokenId) public payable {
     uint256 newItemId = _tokenIds.current();
-    require (msg.sender == this_event.organiser, " Only the event organiser can distribut the winning ticket to the winner.");
-    _mint(msg.sender, newItemId);
+    require (msg.sender == this_event.organiser, " Only the event organiser can distribute the winning ticket to the winner.");
+    _mint(ownerOf(winningTokenId), newItemId);
     _setTokenURI(newItemId, "https://ipfs.io/ipfs/QmPhtX9KpJQtRcnQcdQUf2qM8i6RJ5kitqH9yL3cCfEBNf");
     _tokenIds.increment();                                          
 
