@@ -2,6 +2,8 @@
 
 //THE CONTRACT MUST BE ADDED AS A CONSUMER FROM THE CHAINLINK VRF UI OR THE RANDOM FUNCTION WONT WORK!!!!!
 
+//ID  = 1396 should eb used to connect the contract to a funded chainlink subscription
+
 /* the marketplace contract will include the VRF from Chainlink. Initially I wanted to include this logic in every EventContract contract, but then I would have a hard time 
 funding every EventContract contract with test LINK tokens in order for the VRF to work. 
 This is why the marketplace will have a function, callable only by the people who have created an EventContract before.
@@ -30,56 +32,74 @@ import "./ChainlinkContracts/VRFCoordinatorV2Interface.sol";
 import "./ChainlinkContracts/VRFConsumerBaseV2.sol";
 
 contract Marketplace is VRFConsumerBaseV2 {
-EventContract[] public eventContracts;
-uint randomNumber;
+    EventContract[] public eventContracts;
+    uint256 randomNumber;
 
-  
-  event EventContractCreated ( string indexed _name, address indexed EventContractAddress ,address indexed eventOrganiser);
+    event EventContractCreated(
+        string indexed _name,
+        address indexed EventContractAddress,
+        address indexed eventOrganiser
+    );
 
-  function createEventContract (
-                        uint factory_totalSupply, 
-                        uint factory_priceInEth, 
-                        string memory factory_name, 
-                        string memory factory_symbol,
-                        uint factory_EventContractDuration)  external {
+    function createEventContract(
+        uint256 factory_totalSupply,
+        uint256 factory_priceInEth,
+        string memory factory_name,
+        string memory factory_symbol,
+        uint256 factory_EventContractDuration
+    ) external {
+        EventContract new_EventContract = new EventContract(
+            address(this),
+            payable(msg.sender),
+            factory_totalSupply,
+            factory_priceInEth,
+            factory_name,
+            factory_symbol,
+            factory_EventContractDuration
+        );
+        eventContracts.push(new_EventContract);
+        emit EventContractCreated(
+            factory_name,
+            address(new_EventContract),
+            new_EventContract.eventOrganiser()
+        );
+    }
 
-   EventContract new_EventContract = new EventContract 
-                                                (address(this),
-                                                payable(msg.sender),
-                                                factory_totalSupply,
-                                                factory_priceInEth,
-                                                factory_name,
-                                                factory_symbol,
-                                                factory_EventContractDuration);
-   eventContracts.push(new_EventContract);
-   emit EventContractCreated (factory_name, address(new_EventContract),new_EventContract.eventOrganiser());
-   }
+    function seeEventOrganiser(uint256 eventContractId)
+        public
+        view
+        returns (address payable)
+    {
+        return eventContracts[eventContractId].eventOrganiser();
+    }
 
-   function seeEventOrganiser (uint eventContractId) public view returns (address payable) {
-    return eventContracts[eventContractId].eventOrganiser();
-   }
+    function seeAmountOfSoldTickets(uint256 eventContractId)
+        public
+        view
+        returns (uint256)
+    {
+        return eventContracts[eventContractId].tokenIds();
+    }
 
-     function seeAmountOfSoldTickets (uint eventContractId) public view returns (uint) {
-    return eventContracts[eventContractId].tokenIds();
-   }
+    function seeEventTicketSupply(uint256 eventContractId)
+        public
+        view
+        returns (uint256)
+    {
+        return eventContracts[eventContractId].totalSupply();
+    }
 
-       function seeEventTicketSupply (uint eventContractId) public view returns (uint) {
-    return eventContracts[eventContractId].totalSupply();
-   }
+    // The function is added for ease when looking for a specific event organiser and also used as a require statement prior to calling the VRF random function
+    // in the VRF function an input is requested, representing the index of the address in the EventContracts array in the Marketplace contract
+    // If the msg.sender is the deployer of the event, than the Randon Number Generation functio can be executed
 
+    function receiveEther() public payable {}
 
-  // The function is added for ease when looking for a specific event organiser and also used as a require statement prior to calling the VRF random function
-  // in the VRF function an input is requested, representing the index of the address in the EventContracts array in the Marketplace contract
-  // If the msg.sender is the deployer of the event, than the Randon Number Generation functio can be executed
+    // so far, the logic follows the implementation of the factory contract being the owner of every event contrat. Hence,
+    // in order for the factory to be able to receive ether, I add this payable function
 
-
-   function receiveEther () public payable {}     
-   // so far, the logic follows the implementation of the factory contract being the owner of every event contrat. Hence,
-   // in order for the factory to be able to receive ether, I add this payable function 
-
-
-//// Everything below is VRF logic 
-/*
+    //// Everything below is VRF logic
+    /*
 steps to use the VRF:
 
 1/ get some test eth and link on goerli
@@ -92,75 +112,78 @@ steps to use the VRF:
 
 */
 
- VRFCoordinatorV2Interface COORDINATOR;
+    VRFCoordinatorV2Interface COORDINATOR;
 
-   // Your subscription ID.
-  uint64 s_subscriptionId;
+    // Your subscription ID.
+    uint64 s_subscriptionId;
 
+    // Goerli coordinator. For other networks,
+    // see https://docs.chain.link/docs/vrf-contracts/#configurations
+    address vrfCoordinator = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
 
-  
-  // Goerli coordinator. For other networks,
-  // see https://docs.chain.link/docs/vrf-contracts/#configurations
-  address vrfCoordinator = 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
+    // The gas lane to use, which specifies the maximum gas price to bump to.
+    // For a list of available gas lanes on each network,
+    // see https://docs.chain.link/docs/vrf-contracts/#configurations
+    bytes32 keyHash =
+        0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
 
- // The gas lane to use, which specifies the maximum gas price to bump to.
-  // For a list of available gas lanes on each network,
-  // see https://docs.chain.link/docs/vrf-contracts/#configurations
-  bytes32 keyHash = 0x79d3d8832d904592c0bf9818b621522c988bb8b0c05cdc3b15aea1b6e8db0c15;
+    // Depends on the number of requested values that you want sent to the
+    // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
+    // so 100,000 is a safe default for this example contract. Test and adjust
+    // this limit based on the network that you select, the size of the request,
+    // and the processing of the callback request in the fulfillRandomWords()
+    // function.
+    uint32 callbackGasLimit = 100000;
 
-  // Depends on the number of requested values that you want sent to the
-  // fulfillRandomWords() function. Storing each word costs about 20,000 gas,
-  // so 100,000 is a safe default for this example contract. Test and adjust
-  // this limit based on the network that you select, the size of the request,
-  // and the processing of the callback request in the fulfillRandomWords()
-  // function.
-  uint32 callbackGasLimit = 100000;
+    // The default is 3, but you can set this higher.
+    uint16 requestConfirmations = 3;
 
-// The default is 3, but you can set this higher.
-  uint16 requestConfirmations = 3;
+    // For this example, retrieve 2 random values in one request.
+    // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
+    uint32 numWords = 2;
 
-   // For this example, retrieve 2 random values in one request.
-  // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
-  uint32 numWords =  2;
+    uint256[] private s_randomWords; //changed it to private in order to declutter the interface in case the contract is used in Remix
+    uint256 private s_requestId; // -//-
+    address s_owner;
 
-  uint256[] private s_randomWords; //changed it to private in order to declutter the interface in case the contract is used in Remix
-  uint256 private  s_requestId;    // -//- 
-  address s_owner;
+    constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
+        COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
+        s_owner = msg.sender;
+        s_subscriptionId = subscriptionId;
+    }
 
-  constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
-    COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
-    s_owner = msg.sender;
-    s_subscriptionId = subscriptionId;
-  }
+    // Assumes the subscription is funded sufficiently.
+    function requestRandomWordsandMintToWinner(uint256 eventContractId)
+        external
+        returns (uint256)
+    {
+        require(
+            msg.sender == seeEventOrganiser(eventContractId),
+            "Only the organiser, who has deployed the designated event can request random number generation."
+        );
 
- // Assumes the subscription is funded sufficiently.
-  function requestRandomWordsandMintToWinner(uint eventContractId) external returns (uint)  {
-    require (msg.sender == seeEventOrganiser(eventContractId), "Only the organiser, who has deployed the designated event can request random number generation.");
-  
-    s_requestId = COORDINATOR.requestRandomWords(
-      keyHash,
-      s_subscriptionId,
-      requestConfirmations,
-      callbackGasLimit,
-      numWords
-    );
+        s_requestId = COORDINATOR.requestRandomWords(
+            keyHash,
+            s_subscriptionId,
+            requestConfirmations,
+            callbackGasLimit,
+            numWords
+        );
 
-    randomNumber = (s_requestId % seeAmountOfSoldTickets(eventContractId))*1;
+        randomNumber =
+            (s_requestId % seeAmountOfSoldTickets(eventContractId)) *
+            1;
 
-    eventContracts[eventContractId].mintToWinner(randomNumber);
-  // mints the extra lottery ticket to the owner of the randomly generated token ID (represented by the randomNumber variable
+        eventContracts[eventContractId].mintToWinner(randomNumber);
+        // mints the extra lottery ticket to the owner of the randomly generated token ID (represented by the randomNumber variable
 
-    return randomNumber;
-  }
+        return randomNumber;
+    }
 
-  function fulfillRandomWords(
-    uint256, /* requestId */
-    uint256[] memory randomWords
-  ) internal override {
-    s_randomWords = randomWords;
-  }
-
-
-
-
+    function fulfillRandomWords(
+        uint256, /* requestId */
+        uint256[] memory randomWords
+    ) internal override {
+        s_randomWords = randomWords;
+    }
 }
