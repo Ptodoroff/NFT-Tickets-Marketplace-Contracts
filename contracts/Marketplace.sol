@@ -63,6 +63,9 @@ contract Marketplace is VRFConsumerBaseV2 {
     );
   }
 
+  //======================================================
+  //getter functions
+  //======================================================
   function seeEventOrganiser(uint256 eventContractId)
     public
     view
@@ -101,10 +104,10 @@ contract Marketplace is VRFConsumerBaseV2 {
 
   function receiveEther() public payable {}
 
-  // so far, the logic follows the implementation of the factory contract being the owner of every event contrat. Hence,
-  // in order for the factory to be able to receive ether, I add this payable function
+  //======================================================
+  // VRF logic
+  //======================================================
 
-  //// Everything below is VRF logic
   /*
 steps to use the VRF:
 
@@ -159,6 +162,9 @@ steps to use the VRF:
   }
 
   // Assumes the subscription is funded sufficiently.
+  //======================================================
+  // Generating a random number with Chainlink's VRF. The result represents a tokenID. Its owner is the winner and the extra ticket is sent minted to him/her
+  //======================================================
   function requestRandomWordsandMintToWinner(uint256 eventContractId)
     external
     returns (uint256)
