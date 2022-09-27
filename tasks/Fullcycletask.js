@@ -6,7 +6,7 @@ task(
   "Does a full cycle of the contract's functionality"
 ).setAction(async (setArgs, hre) => {
   // Defining signers and deploying the mock VRF contract
-  [owner, addr1, addr2, addr3] = await ethers.getSigners();
+  [owner, addr1, addr2, addr3, addr4] = await ethers.getSigners();
 
   let vrfCoordinatorV2Mock = await ethers.getContractFactory(
     "VRFCoordinatorV2Mock"
@@ -16,7 +16,7 @@ task(
     "================================================================================================================================================================"
   );
   console.log(
-    `Deploying the VRF contract at ${hardhatVrfCoordinatorV2Mock.address} ...`
+    `Deploying the VRF contract at: ${hardhatVrfCoordinatorV2Mock.address} ...`
   );
   // Deploying the Marketplace contract
   const Marketplace = await ethers.getContractFactory("Marketplace");
@@ -25,7 +25,16 @@ task(
     hardhatVrfCoordinatorV2Mock.address
   );
   console.log(
-    `Deploying the Marketplace contract at ${marketplace.address} ...`
+    "================================================================================================================================================================"
+  );
+  console.log(
+    `Deploying the Marketplace contract at: ${marketplace.address} ...`
+  );
+  console.log(
+    `The owner deploying the Marketplace contract is: ${owner.address}`
+  );
+  console.log(
+    "================================================================================================================================================================"
   );
   // Creating a subscriptin for the Chainlink VRF , funding it and adding the contract as a spender
   await hardhatVrfCoordinatorV2Mock.createSubscription();
@@ -36,13 +45,9 @@ task(
   );
   await hardhatVrfCoordinatorV2Mock.addConsumer(1, marketplace.address);
   // Deploying an event contract
-  await marketplace.createEventContract(
-    10,
-    ethers.utils.parseUnits("5", 18),
-    1,
-    1,
-    100
-  );
+  await marketplace
+    .connect(addr4)
+    .createEventContract(10, ethers.utils.parseUnits("5", 18), 1, 1, 100);
   let eventAddress = await marketplace.eventContracts(0);
   let NewEventContractInstance = await ethers.getContractFactory(
     "EventContract"
@@ -50,14 +55,14 @@ task(
   let newEventContract = await NewEventContractInstance.attach(eventAddress);
   let totalSupply = await newEventContract.totalSupply();
   console.log(
-    `Deploying a new Event contract at ${eventAddress} ...\nTicket supply of the created event: ${totalSupply}\nPrice per ticket: 5 ETH`
+    `Deploying a new Event contract at: ${eventAddress} ...\nTicket supply of the created event: ${totalSupply} tickets\nPrice per ticket: 5 ETH`
   );
   console.log(
     "================================================================================================================================================================"
   );
-  console.log(`The organiser of the event is ${owner.address}`);
+  console.log(`The organiser of the event is: ${addr4.address}`);
   let initialBalanceOfEventOrganiser = await ethers.provider.getBalance(
-    owner.address
+    addr4.address
   );
   console.log(
     `Initial balance of the event organiser's wallet: ${ethers.utils.formatEther(
@@ -65,8 +70,9 @@ task(
     )} ETH`
   );
 
-  ("================================================================================================================================================================");
-
+  console.log(
+    "================================================================================================================================================================"
+  );
   // Minting/buying tickets from the newly deployed event
   await newEventContract
     .connect(addr1)
@@ -93,7 +99,7 @@ task(
   console.log(".");
 
   //Minting the winning ticket
-  await marketplace.MintToRandomWinner(0);
+  await marketplace.connect(addr4).MintToRandomWinner(0);
   let balanceOfAddr3 = await newEventContract.balanceOf(addr3.address);
   let balanceOfAddr1 = await newEventContract.balanceOf(addr1.address);
   let balanceOfAddr2 = await newEventContract.balanceOf(addr2.address);
@@ -107,8 +113,8 @@ task(
   console.log(
     "================================================================================================================================================================"
   );
-  await marketplace.withdrawFundsFromEvent(0);
-  let balanceOfEventOrganiser = await ethers.provider.getBalance(owner.address);
+  await marketplace.connect(addr4).withdrawFundsFromEvent(0);
+  let balanceOfEventOrganiser = await ethers.provider.getBalance(addr4.address);
   console.log(
     ` Balance of the event organiser's wallet after withdrawal of ticket proceeds : ${ethers.utils.formatEther(
       balanceOfEventOrganiser
