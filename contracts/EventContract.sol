@@ -102,14 +102,15 @@ contract EventContract is ERC721URIStorage {
   //idea - could lift this function to be invocable from the factory as well ?
   function withdrawFunds() external payable {
     require(
-      msg.sender == this_event.organiser,
-      "Only the organiser of the event can call this function!"
+      msg.sender == this_event.factoryAddress ||
+        msg.sender == this_event.organiser,
+      "Only the event organiser can invoke this function  and get his/her revenue from the ticket sale."
     );
     require(
       this_event.endDate < block.timestamp,
       "The organiser cannot withdraw funds before the event has concluded."
     );
-    this_event.organiser.transfer(address(this).balance);
+    eventOrganiser.transfer(address(this).balance);
   }
 
   function currentEventRevenue() public view returns (uint256) {

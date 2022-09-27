@@ -2,6 +2,7 @@
 
 //THE CONTRACT MUST BE ADDED AS A CONSUMER FROM THE CHAINLINK VRF UI OR THE RANDOM FUNCTION WONT WORK!!!!!
 
+// use this address as the VRF coordinator input for Goerli - 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
 /* the marketplace contract will include the VRF from Chainlink. Initially I wanted to include this logic in every EventContract contract, but then I would have a hard time 
 funding every EventContract contract with test LINK tokens in order for the VRF to work. 
 This is why the marketplace will have a function, callable only by the people who have created an EventContract before.
@@ -104,6 +105,14 @@ contract Marketplace is VRFConsumerBaseV2 {
 
   function receiveEther() public payable {}
 
+  function withdrawFundsFromEvent(uint256 eventContractId) public {
+    require(
+      msg.sender == seeEventOrganiser(eventContractId),
+      "Only the organiser, who has deployed the designated event can withdraw the funds from the ticket sale."
+    );
+    eventContracts[eventContractId].withdrawFunds();
+  }
+
   //======================================================
   // VRF logic
   //======================================================
@@ -155,8 +164,10 @@ steps to use the VRF:
   uint256 private s_requestId; // -//-
   address s_owner;
 
-  constructor(uint64 subscriptionId) VRFConsumerBaseV2(vrfCoordinator) {
-    COORDINATOR = VRFCoordinatorV2Interface(vrfCoordinator);
+  constructor(uint64 subscriptionId, address _vrfCoordinator)
+    VRFConsumerBaseV2(_vrfCoordinator)
+  {
+    COORDINATOR = VRFCoordinatorV2Interface(_vrfCoordinator);
     s_owner = msg.sender;
     s_subscriptionId = subscriptionId;
   }
@@ -165,7 +176,7 @@ steps to use the VRF:
   //======================================================
   // Generating a random number with Chainlink's VRF. The result represents a tokenID. Its owner is the winner and the extra ticket is sent minted to him/her
   //======================================================
-  function requestRandomWordsandMintToWinner(uint256 eventContractId)
+  function MintToRandomWinner(uint256 eventContractId)
     external
     returns (uint256)
   {
