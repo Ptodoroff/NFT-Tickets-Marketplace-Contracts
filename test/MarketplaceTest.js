@@ -83,4 +83,33 @@ describe("Marketplace", () => {
       //"The total amount of sold tickets for the event is incremented by 1 after the winner is sent a winning ticket"
     );
   });
+
+  it("Should revert minting to winner if the sale period has not ended", async () => {
+    const EventContract = await ethers.getContractFactory("EventContract"); // getting the "abi" of the Event contract
+    let newEvent = await marketplace.createEventContract(10, 0, 1, 1, 100);
+    await newEvent.wait();
+    let eventAddress = await marketplace.eventContracts(0);
+    let eventContractInstance = await EventContract.attach(eventAddress); //"attaching" the EventContract abi, to the first address in the EventContracts array
+    await eventContractInstance.connect(addr1).mint();
+    await eventContractInstance.connect(addr1).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(addr1).mint();
+
+    let amountOfSolTicketsBeforeAnnouncingTheWinner =
+      await marketplace.seeAmountOfSoldTickets(0);
+    // total tickets sold amount to 9
+
+    await expect(
+      marketplace.requestRandomWordsandMintToWinner(0)
+    ).to.be.revertedWith(
+      "You cannot call this function before the ticket sale period for the designated event has ended"
+    );
+
+    //"Minting to winner reverts if  the designated sale period for the event has not passed"
+  });
 });
