@@ -9,7 +9,7 @@ let marketplace;
 //=======================================
 
 beforeEach(async () => {
-  [owner, addr1] = await ethers.getSigners();
+  [owner, addr1, addr2] = await ethers.getSigners();
 
   let vrfCoordinatorV2Mock = await ethers.getContractFactory(
     "VRFCoordinatorV2Mock"
@@ -33,11 +33,11 @@ beforeEach(async () => {
 
 describe("Marketplace", () => {
   it("Should deploy a new event contract", async () => {
-    [owner, addr1, addr2] = await ethers.getSigners();
     let newEvent = await marketplace.createEventContract(10, 10, 1, 1, 100);
     await newEvent.wait();
     assert(
-      (await marketplace.eventContracts(0)) != 0
+      (await marketplace.eventContracts(0)) !=
+        0x0000000000000000000000000000000000000000
       //"The new contract is pushed to the eventContracts array."
     );
   });
@@ -197,6 +197,8 @@ describe("Marketplace", () => {
 
     await network.provider.send("evm_increaseTime", [105]);
     await network.provider.send("evm_mine");
+    await expect(marketplace.connect(owner).withdrawFundsFromEvent(0));
+    // allows the organiser of the event to withdraw his/her funds through the factory contract
 
     await expect(
       marketplace.connect(addr1).withdrawFundsFromEvent(0)

@@ -87,7 +87,7 @@ contract EventContract is ERC721URIStorage {
     // and execute the function, thus bypassing the VRF by chainlink
     require(
       msg.sender == this_event.factoryAddress,
-      " Only the event organiser can invoke this function THROUGH THE FACTORY ADDRESS and can distribute the winning ticket to the winner."
+      "Only the event organiser can invoke this function THROUGH THE FACTORY ADDRESS and can distribute the winning ticket to the winner."
     );
     _mint(ownerOf(winningTokenId), newItemId);
     _setTokenURI(
@@ -104,7 +104,7 @@ contract EventContract is ERC721URIStorage {
     require(
       msg.sender == this_event.factoryAddress ||
         msg.sender == this_event.organiser,
-      "Only the event organiser can invoke this function  and get his/her revenue from the ticket sale."
+      "Only the event organiser or the event organiser via the factory contract can invoke this function  and get his/her revenue from the ticket sale."
     );
     require(
       this_event.endDate < block.timestamp,
