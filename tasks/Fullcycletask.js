@@ -1,3 +1,5 @@
+// task is run by typing npx hardhat fullcycle
+
 const ether = require("@openzeppelin/test-helpers/src/ether");
 const { task } = require("hardhat/config");
 
