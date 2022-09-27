@@ -29,7 +29,7 @@ beforeEach(async () => {
 
 describe("Marketplace", () => {
   it("Should deploy a new event contract", async () => {
-    const [owner, addr1] = await ethers.getSigners();
+    [owner, addr1, addr2] = await ethers.getSigners();
     let newEvent = await marketplace.createEventContract(10, 10, 1, 1, 100);
     await newEvent.wait();
     assert(
@@ -52,28 +52,35 @@ describe("Marketplace", () => {
     );
   });
 
-  it("Should allow a user to buy a ticket from the already deployed event contract", async () => {
+  it("Should generate a random number via the Chainlink VRF function and sends the winning ticket to the owner of the tokenId, represented by the number that Chainlink VRF generates", async () => {
     const EventContract = await ethers.getContractFactory("EventContract"); // getting the "abi" of the Event contract
     let newEvent = await marketplace.createEventContract(10, 0, 1, 1, 100);
     await newEvent.wait();
     let eventAddress = await marketplace.eventContracts(0);
     let eventContractInstance = await EventContract.attach(eventAddress); //"attaching" the EventContract abi, to the first address in the EventContracts array
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
-    await eventContractInstance.mint();
+    await eventContractInstance.connect(addr1).mint();
+    await eventContractInstance.connect(addr1).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(addr2).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(owner).mint();
+    await eventContractInstance.connect(addr1).mint();
 
+    let amountOfSolTicketsBeforeAnnouncingTheWinner =
+      await marketplace.seeAmountOfSoldTickets(0);
+    // total tickets sold amount to 9
+
+    //fast-forwarding the time with 105 seconds and then mining the block in order to jump 105 seconds ahead and bypass the require statement that checks if the ticketSale period has ended
     await network.provider.send("evm_increaseTime", [105]);
     await network.provider.send("evm_mine");
-
     await marketplace.requestRandomWordsandMintToWinner(0);
+
     assert(
-      (await eventContractInstance.balanceOf(owner.address)) == 9
-      //"The balance of the address, calling the mint function is incremented by one. Hence, he has successfully bought a ticket."
+      (await marketplace.seeAmountOfSoldTickets(0)) ==
+        Number(amountOfSolTicketsBeforeAnnouncingTheWinner) + 1
+      //"The total amount of sold tickets for the event is incremented by 1 after the winner is sent a winning ticket"
     );
   });
 });
