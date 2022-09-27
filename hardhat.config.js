@@ -1,5 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomiclabs/hardhat-waffle");
+require("./tasks/Fullcycletask.js");
 
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {

@@ -6,7 +6,7 @@ const provider = waffle.provider;
 let marketplace;
 let eventContractInstance;
 //=======================================
-// Testing the Marketplace contract.
+// Testing the Event contract.
 //=======================================
 
 beforeEach(async () => {
