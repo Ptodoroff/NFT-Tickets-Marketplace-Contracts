@@ -35,14 +35,18 @@ contract Marketplace is VRFConsumerBaseV2 {
   uint256 public randomNumber;
 
   event EventContractCreated(
-    string indexed _name,
+    string indexed name,
     address indexed EventContractAddress,
-    address indexed eventOrganiser
+    address indexed eventOrganiser,
+    string symbol,
+    uint256 price,
+    uint256 duration,
+    uint256 ticketSupply
   );
 
   function createEventContract(
     uint256 factory_totalSupply,
-    uint256 factory_priceInEth,
+    uint256 factory_priceInWei,
     string memory factory_name,
     string memory factory_symbol,
     uint256 factory_EventContractDuration
@@ -51,7 +55,7 @@ contract Marketplace is VRFConsumerBaseV2 {
       address(this),
       payable(msg.sender),
       factory_totalSupply,
-      factory_priceInEth,
+      factory_priceInWei,
       factory_name,
       factory_symbol,
       factory_EventContractDuration
@@ -60,7 +64,11 @@ contract Marketplace is VRFConsumerBaseV2 {
     emit EventContractCreated(
       factory_name,
       address(new_EventContract),
-      new_EventContract.eventOrganiser()
+      new_EventContract.eventOrganiser(),
+      factory_symbol,
+      factory_priceInWei,
+      factory_EventContractDuration,
+      factory_totalSupply
     );
   }
 
