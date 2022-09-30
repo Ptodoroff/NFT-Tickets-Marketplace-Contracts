@@ -44,13 +44,13 @@ First, make sure you have Goerli test ether. You can get some at: [goerlifaucet.
 1. Clone the repository
 2. Run `npm install`
 3. Interacting with the contract - Although it can easily be done with Hardhat, it requires setting up a Goerli provider, etc. An easier alternative, in my opinion, would be:
-   a/ Go to [Remix](https://remix.ethereum.org/)
-   b/ Create a new file called `Marketplace.sol` and paste the code of `Marketplace.sol` from this repository to the newly created file in Remix.
-   c/ Do the same for `EventContract.sol`
-   d/ In the SOLIDITY COMPILER tab, select compiler version 0.8.7 to match the one, required by the contracts and COMPILE `Marketplace.sol`
-   e/ Go to the DEPLOY & RUN TRANSACTIONS tab. In the Environment dropdown, select `Inejcted provider - Metamask` (could be different if you use another wallet extension, but look for `injected provider`). Then go to your wallet extension dashboard and connect it to the **Goerli testnet**
-   f/ Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D`.
-   g/ An UI with the callable functions of the contract should pop up below.
+   a/ Go to [Remix](https://remix.ethereum.org/)\
+   b/ Create a new file called `Marketplace.sol` and paste the code of `Marketplace.sol` from this repository to the newly created file in Remix.\
+   c/ Do the same for `EventContract.sol`\
+   d/ In the SOLIDITY COMPILER tab, select compiler version 0.8.7 to match the one, required by the contracts and COMPILE `Marketplace.sol`\
+   e/ Go to the DEPLOY & RUN TRANSACTIONS tab. In the Environment dropdown, select `Inejcted provider - Metamask` (could be different if you use another wallet extension but look for `injected provider`). Then go to your wallet extension dashboard and connect it to the **Goerli testnet**\
+   f/ Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D`.\
+   g/ An UI with the callable functions of the contract should pop up below.\
 
    CAUTION - attempting to deploy a new `Marketplace.sol` contract would require adding it to an already-funded subscription via the Chainlink subscription dashboard, otherwise the `MintToRandomWinner` will not execute.
 
@@ -59,17 +59,17 @@ First, make sure you have Goerli test ether. You can get some at: [goerlifaucet.
 This section will explain the core functions for the two main contracts - `Marketplace.sol` and `EventContract.sol`. For any additional information, pelase take a look at the comments in the code of the contracts.
 
 1. `Marketplace.sol`
-   a/ `eventContracts` a public array with a getter function, which contains all the addresses of the deployed Event contracts from the factory contract.
-   b/ `createEventContract` - deploys a new instance of the `EventContract.sol` with the parameters provided.
-   c/ `withdrawFundsFromEvent` - accepts a uint as an argument, which is the index of the Event contract from the `eventContracts` array. Callable only by the event organiser for the selected event contract.
-   d/ `MintToRandomWinner` - randomly selects a tokenId from the already minted tickets and mints one extra ticket to its owner. Here the Chainlink VRF functionality is implemented.
+   a/ `eventContracts` a public array with a getter function, which contains all the addresses of the deployed Event contracts from the factory contract.\
+   b/ `createEventContract` - deploys a new instance of the `EventContract.sol` with the parameters provided.\
+   c/ `withdrawFundsFromEvent` - accepts a uint as an argument, which is the index of the Event contract from the `eventContracts` array. Callable only by the event organiser for the selected event contract.\
+   d/ `MintToRandomWinner` - randomly selects a tokenId from the already minted tickets and mints one extra ticket to its owner. Here the Chainlink VRF functionality is implemented.\
 
 2. `EventContract.sol`
-   a/`mint` - allows the user to buy tickets for the event. Require statements:
+   a/`mint` - allows the user to buy tickets for the event. Require statements:\
    -cannot mint after the totalSupply has been reached.
    -cannot mint if the ticket sale period has ended.
    -cannot mint if the transaction value is not the same as the ticket price.
-   b/`mintToWinner` - sends the winner one additional ticket. Require statements:
+   b/`mintToWinner` - sends the winner one additional ticket. Require statements:\
    -can be called only by the event organiser via the factory contract's function `MintToRandomWinner`.
 
 3. Tests
