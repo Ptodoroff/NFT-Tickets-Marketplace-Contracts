@@ -58,13 +58,13 @@ First, make sure you have Goerli test ether. You can get some at: [goerlifaucet.
 
 This section will explain the core functions for the two main contracts - `Marketplace.sol` and `EventContract.sol`. For any additional information, pelase take a look at the comments in the code of the contracts.
 
-1. `Marketplace.sol`
+1. `Marketplace.sol`\
    **a/** `eventContracts` a public array with a getter function, which contains all the addresses of the deployed Event contracts from the factory contract.\
    **b/** `createEventContract` - deploys a new instance of the `EventContract.sol` with the parameters provided.\
    **c/** `withdrawFundsFromEvent` - accepts a uint as an argument, which is the index of the Event contract from the `eventContracts` array. Callable only by the event organiser for the selected event contract.\
    **d/** `MintToRandomWinner` - randomly selects a tokenId from the already minted tickets and mints one extra ticket to its owner. Here the Chainlink VRF functionality is implemented.\
 
-2. `EventContract.sol`
+2. `EventContract.sol`\
    **a/**`mint` - allows the user to buy tickets for the event. Require statements:\
    -cannot mint after the totalSupply has been reached.
    -cannot mint if the ticket sale period has ended.
