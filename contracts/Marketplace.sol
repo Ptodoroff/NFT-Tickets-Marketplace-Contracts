@@ -1,41 +1,35 @@
 // SPDX-License-Identifier: UNLICENSED
 
-//THE CONTRACT MUST BE ADDED AS A CONSUMER FROM THE CHAINLINK VRF UI OR THE RANDOM FUNCTION WONT WORK!!!!!
+//EVERY INSTANCE OF THE FACTRY CONTRACT, DEPLOYED ON THE GOERLI TESTNET MUST BE ADDED AS A CONSUMER FROM THE CHAINLINK VRF UI OR THE RANDOM FUNCTION WONT WORK!!!!!
 
-// use this address as the VRF coordinator input for Goerli - 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
-/* the marketplace contract will include the VRF from Chainlink. Initially I wanted to include this logic in every EventContract contract, but then I would have a hard time 
-funding every EventContract contract with test LINK tokens in order for the VRF to work. 
+//  IF REDEPLOYING :
+//1. Use this address as the VRF coordinator ( _vrfCoordinator) input for Goerli - 0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D;
+//2. Use 1396 as _subscriptionId
+
+/* From my basic knowledge of smart contract security, I decided to follow one of the most important rules of it  -- The best source of randomness is always off-chain.
+ This is the reason why I decided to include Chainlink's VRF functionality and deploy the entire projects with all its contracts on the Goerli testnet. 
 This is why the marketplace will have a function, callable only by the people who have created an EventContract before.
 
-the function that would generate the number must have the total supply, but better the currentId for the contract's nft count of the particular EventContract as an input and then use this input as a limit for the random number size.
+I have not considered a pseudo-random function which requires on parameters like block.timestamp, etc. for the reasons, outlined above.
 
-
-I have not considered a pseudo-random function, implemneted in every isntance of the EventContract contract, due to the fact that nothing on-chain is really random.
-
-
-- another possible solution (currently exploring it) - the vrf would accept the address for which the lottery is intended. Its sole purpose is to be included in an 
-EventContract, together with the random number generated. then, the corresponding EventContract contract instance will listen if an EventContract from the factory contract has been emitted ( with 
-an address, mathing the particular EventContract contract address and would act accordingly)
-
-
-the arrays, holding the event instances and event addresses could be converted to mappings ( uint to address ) with Counters lib also imported, to increment the uint 
-in the mappings 
-
--topic to address - The owner of every Event contract is the factory one. Maybe tx.origin ? Although highly not recommended 
 */
 pragma solidity 0.8.17;
 import "./EventContract.sol";
 
-//the following imports are needed for the VRF contract
+//======================================================
+//the following imports are needed for the VRF functionality to work
+//======================================================
 import "./ChainlinkContracts/VRFCoordinatorV2Interface.sol";
 import "./ChainlinkContracts/VRFConsumerBaseV2.sol";
 
 contract Marketplace is VRFConsumerBaseV2 {
+  // declared public in order to generate getter functions
   EventContract[] public eventContracts;
   uint256 public randomNumber;
 
+  // event that I use to fetch the data for every event contract card in the frontend
   event EventContractCreated(
-    string indexed name,
+    string name,
     address indexed EventContractAddress,
     address indexed eventOrganiser,
     string symbol,
@@ -44,6 +38,7 @@ contract Marketplace is VRFConsumerBaseV2 {
     uint256 ticketSupply
   );
 
+  //creates an event (event contract) with the passed parameters. I have used names, which I think are self - explanatory
   function createEventContract(
     uint256 factory_totalSupply,
     uint256 factory_priceInWei,
@@ -75,6 +70,8 @@ contract Marketplace is VRFConsumerBaseV2 {
   //======================================================
   //getter functions
   //======================================================
+
+  // The function is added for ease when looking for a specific event organiser and also used as a require statement prior to calling the VRF random function
   function seeEventOrganiser(uint256 eventContractId)
     public
     view
@@ -107,12 +104,9 @@ contract Marketplace is VRFConsumerBaseV2 {
     return eventContracts[eventContractId].eventDuration();
   }
 
-  // The function is added for ease when looking for a specific event organiser and also used as a require statement prior to calling the VRF random function
-  // in the VRF function an input is requested, representing the index of the address in the EventContracts array in the Marketplace contract
-  // If the msg.sender is the deployer of the event, than the Randon Number Generation functio can be executed
-
   function receiveEther() public payable {}
 
+  // I added this function in order to lift the state and make the withdrawal of funds easier, rather than havin to go to the event contract and calling it from there
   function withdrawFundsFromEvent(uint256 eventContractId) public {
     require(
       msg.sender == seeEventOrganiser(eventContractId),
@@ -124,19 +118,6 @@ contract Marketplace is VRFConsumerBaseV2 {
   //======================================================
   // VRF logic
   //======================================================
-
-  /*
-steps to use the VRF:
-
-1/ get some test eth and link on goerli
-2/ create a chainling subscription from their website
-3/ fund the subscription
-4/ deploy the 3 contracts via remix, with the subscription ID passed as an arg in the constructor
-5/ call RequestRandomWOrds()
-5/call requestID
-6/ optional - paste the result from requestId to the getFInalValue fn
-
-*/
 
   VRFCoordinatorV2Interface COORDINATOR;
 
@@ -182,7 +163,11 @@ steps to use the VRF:
 
   // Assumes the subscription is funded sufficiently.
   //======================================================
-  // Generating a random number with Chainlink's VRF. The result represents a tokenID. Its owner is the winner and the extra ticket is sent minted to him/her
+  // Generating a random number with Chainlink's VRF. The result represents a tokenID. Its owner is the winner and the extra ticket is sent/minted to him/her
+  //The function can only be called:
+  //1. From the creator of the event contract for which the  lottery is to be drawn
+  //2. From the creator of the event contract but VIA THE FACTORY CONTRACT. Since the VRF logic is in the Marketplace contract  (this contract), this is required, otherwise the event creator would simply call the mint function from the event contract itself, thus bypassing the random number generation and imposing a security risk
+  //3. After the ticket sale period for the particular event has concluded.
   //======================================================
   function MintToRandomWinner(uint256 eventContractId)
     external
@@ -206,8 +191,8 @@ steps to use the VRF:
 
     randomNumber = (s_requestId % seeAmountOfSoldTickets(eventContractId)) * 1;
 
-    eventContracts[eventContractId].mintToWinner(randomNumber);
     // mints the extra lottery ticket to the owner of the randomly generated token ID (represented by the randomNumber variable
+    eventContracts[eventContractId].mintToWinner(randomNumber);
 
     return randomNumber;
   }

@@ -1,15 +1,8 @@
 //SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.17; //locked pragma because of Secureum's recommendations. I must explain it.
+pragma solidity 0.8.17;
 
-// for the randonmness - Chainlink's VRF function will be implemented. There will be a number generator function
-// the number generated will represent the winning tokenID. The last winning ticket will be then minted to the winner
-
-// idea : I should format all comments in natspec for better look
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-
-//counters should me imported
-//ownable as well, or maybe i could create emy own modifier since it would be only one
 
 contract EventContract is ERC721URIStorage {
   using Counters for Counters.Counter;
@@ -20,7 +13,7 @@ contract EventContract is ERC721URIStorage {
 
   struct Event {
     address factoryAddress;
-    address payable organiser; //payable so that he can withdraw funds
+    address payable organiser; //payable so that the event organiser  can withdraw funds
     string symbol;
     string eventName;
     uint256 _totalSupply;
@@ -56,10 +49,10 @@ contract EventContract is ERC721URIStorage {
     eventDuration = this_event.endDate;
     totalSupply = m_totalSupply;
     eventOrganiser = _organiser;
-    // each event lasts for two days
-    // the event address should point to the address of the newly created event;
   }
 
+  // The function to buy (mint) tickets for the created event
+  // upon mint, the user could check his/her wallet on the  Goerli Testnet Opensea  website and a generic NFT will be found in his/her account, representing an token the metadata, outlined in the ./metadata/metadata.json file
   function mint() public payable returns (uint256) {
     uint256 newItemId = tokenIds.current();
     require(newItemId < totalSupply, "Tickets for this event are sold out.");
@@ -76,15 +69,14 @@ contract EventContract is ERC721URIStorage {
       newItemId,
       "https://ipfs.io/ipfs/QmPhtX9KpJQtRcnQcdQUf2qM8i6RJ5kitqH9yL3cCfEBNf"
     );
-    tokenIds.increment(); /// tokenId should be the next Id from the counter
+    tokenIds.increment();
     return newItemId;
-    //erc721 mint
   }
 
+  // I require that the msg.sender is the factory Address, because otherwise the organiser can simply come to this contract instance
+  // and execute the function, thus bypassing the VRF by Chainlink that I have imported
   function mintToWinner(uint256 winningTokenId) external {
     uint256 newItemId = tokenIds.current();
-    // I require that the msg.sender is the factory Address, because otherwise the organiser can simply come to this contract instance
-    // and execute the function, thus bypassing the VRF by chainlink
     require(
       msg.sender == this_event.factoryAddress,
       "Only the event organiser can invoke this function THROUGH THE FACTORY ADDRESS and can distribute the winning ticket to the winner."
@@ -97,9 +89,6 @@ contract EventContract is ERC721URIStorage {
     tokenIds.increment();
   }
 
-  //contract is payable so that the creator of the event could withdraw the revenue from the tickets
-  //function is declared external - cannot be called from the factory contract !
-  //idea - could lift this function to be invocable from the factory as well ?
   function withdrawFunds() external payable {
     require(
       msg.sender == this_event.factoryAddress ||

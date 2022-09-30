@@ -108,7 +108,7 @@ task(
   console.log(`User 1 got ${balanceOfAddr3} ticket. `);
   console.log(`User 2 got ${balanceOfAddr1} ticket. `);
   console.log(
-    `User 3 got ${balanceOfAddr2} tickets - the winner, as this accounts owns one extra ticket.`
+    `User 3 got ${balanceOfAddr2} tickets - the winner, as this account owns one extra ticket.`
   );
 
   //Withdrawal of  the ticket revenue by the event organiser
