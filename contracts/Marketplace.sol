@@ -13,7 +13,7 @@ This is why the marketplace will have a function, callable only by the people wh
 I have not considered a pseudo-random function which requires on parameters like block.timestamp, etc. for the reasons, outlined above.
 
 */
-pragma solidity 0.8.17;
+pragma solidity 0.8.7;
 import "./EventContract.sol";
 
 //======================================================
