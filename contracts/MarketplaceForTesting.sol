@@ -22,18 +22,10 @@ import "./EventContract.sol";
 import "./ChainlinkContracts/VRFCoordinatorV2Interface.sol";
 import "./ChainlinkContracts/VRFConsumerBaseV2.sol";
 
-contract Marketplace is VRFConsumerBaseV2 {
+contract MarketplaceForTesting is VRFConsumerBaseV2 {
   // declared public in order to generate getter functions
   EventContract[] public eventContracts;
   uint256 public randomNumber;
-  uint256 public s_eventContractId; // Stores the contractId, required for invocation of the MintToRandomWinner function, that is a two-step process.
-
-  //1. the event organiser invokes MintToRandomWinner function, which is simply the equivalen of RequestRandomWords for the VRF functionality, in which the oracle is *asked* for randomness. it returns a requestID, which then
-  // the same oracle uses to
-  //2. Call the fulfillrandomness function, which holds the lottery logic. Actually, this function is called by the chainLink oracle, when it has generated the random number that was requested in step 1
-  //3. the random number is stored in the s_randomWords array, modified to be between 0 and the amount of sold tickets for the selected event and then used as a tokenId, whose owner is the winner and receives the extra ticket
-
-  // IMPORTANT - due to the process requiring two-steps, the actual minting of the winning ticket may take up to several minutes, because this is the amoun of time that the oracle requires sometimes in order to sends the random number back to the contract.
 
   // event that I use to fetch the data for every event contract card in the frontend
   event EventContractCreated(
@@ -148,17 +140,17 @@ contract Marketplace is VRFConsumerBaseV2 {
   // this limit based on the network that you select, the size of the request,
   // and the processing of the callback request in the fulfillRandomWords()
   // function.
-  uint32 callbackGasLimit = 1000000;
+  uint32 callbackGasLimit = 100000;
 
   // The default is 3, but you can set this higher.
   uint16 requestConfirmations = 3;
 
-  // For this example, retrieve 1 random value.
+  // For this example, retrieve 2 random values in one request.
   // Cannot exceed VRFCoordinatorV2.MAX_NUM_WORDS.
-  uint32 numWords = 1;
+  uint32 numWords = 2;
 
-  mapping(uint256 => uint256[]) public s_randomWords; // stores the generated random number for each created event in an array/
-  uint256 public s_requestId;
+  uint256[] private s_randomWords; //changed it to private in order to declutter the interface in case the contract is used in Remix
+  uint256 private s_requestId; // -//-
   address s_owner;
 
   constructor(uint64 subscriptionId, address _vrfCoordinator)
@@ -197,7 +189,10 @@ contract Marketplace is VRFConsumerBaseV2 {
       numWords
     );
 
-    s_eventContractId = eventContractId;
+    randomNumber = (s_requestId % seeAmountOfSoldTickets(eventContractId)) * 1;
+
+    // mints the extra lottery ticket to the owner of the randomly generated token ID (represented by the randomNumber variable
+    eventContracts[eventContractId].mintToWinner(randomNumber);
 
     return randomNumber;
   }
@@ -206,13 +201,6 @@ contract Marketplace is VRFConsumerBaseV2 {
     uint256, /* requestId */
     uint256[] memory randomWords
   ) internal override {
-    s_randomWords[s_eventContractId] = randomWords; //storing the random number that the oracle sends to this contract in an array for the corresponding event contract
-    randomNumber =
-      (s_randomWords[s_eventContractId][0] %
-        seeAmountOfSoldTickets(s_eventContractId)) *
-      1;
-
-    // mints the extra lottery ticket to the owner of the randomly generated token ID (represented by the randomNumber variable
-    eventContracts[s_eventContractId].mintToWinner(randomNumber);
+    s_randomWords = randomWords;
   }
 }

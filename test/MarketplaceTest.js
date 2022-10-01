@@ -16,7 +16,7 @@ beforeEach(async () => {
   );
   hardhatVrfCoordinatorV2Mock = await vrfCoordinatorV2Mock.deploy(0, 0);
 
-  const Marketplace = await ethers.getContractFactory("Marketplace");
+  const Marketplace = await ethers.getContractFactory("MarketplaceForTesting");
   marketplace = await Marketplace.deploy(
     1,
     hardhatVrfCoordinatorV2Mock.address
