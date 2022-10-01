@@ -19,8 +19,7 @@
 
 This repository consists of the contracts, their unit tests and Hardhat task for the decentralsied application that I created. The overall project represents an event management platform, where one factory contract `Marketplace.sol ` is used by the user to create different events (equivalent to NFT collections) with set parameters like event name, ticket price, ticket quantity, ticket sale duration, etc. Once the event contract `EventContract.sol ` is deployed, users can buy tickets (mint them) as long as the ticket sale period has not ended. When this happens, the Event organiser can call a function that would randomly select a ticket owner and would send one additional ticket to him/her.
 
-The factory contract `Marketplace.sol` includes functionality from the Chainlink protocol, namely the VRF. It is used to generate a number that would represent a tokenId.
-The owner of the ticket with the corresponding tokenId is sent one additional ticket as a reward.
+Part of the assignment requires random number generation. The factory contract `Marketplace.sol` includes functionality from the Chainlink protocol, namely the VRF. It is used to generate a number off-chain that would represent a tokenId.The owner of the ticket with the corresponding tokenId is sent one additional ticket as a reward. The reason for this implementation lays in the fact that randomness, geenerated on-chain, by using private variables and their hashes or block timestamps, etc. is often regarded as pseudo-random and predictable. The only 'secure' way to do this happens via Chainlink and this is the sole reason for the entire project to deployed on Goerli (as this is the testnet, used the most for their testing services).
 
 ---
 
@@ -49,20 +48,20 @@ First, make sure you have Goerli test ether. You can get some at: [goerlifaucet.
    **c/** Do the same for `EventContract.sol`\
    **d/** In the SOLIDITY COMPILER tab, select compiler version 0.8.7 to match the one, required by the contracts and COMPILE `Marketplace.sol`\
    **e/** Go to the DEPLOY & RUN TRANSACTIONS tab. In the Environment dropdown, select `Inejcted provider - Metamask` (could be different if you use another wallet extension but look for `injected provider`). Then go to your wallet extension dashboard and connect it to the **Goerli testnet**\
-   **f/** Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0x2Ca8E0C643bDe4C2E08ab1fA0da3401AdAD7734D`.\
+   **f/** Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0xB6c05e5E2E78f2e90419eef2b651A05Cab4a1C50`.\
    **g/** An UI with the callable functions of the contract should pop up below.\
 
-   CAUTION - attempting to deploy a new `Marketplace.sol` contract would require adding it to an already-funded subscription via the Chainlink subscription dashboard, otherwise the `MintToRandomWinner` will not execute.
+   CAUTION - attempting to deploy a new `Marketplace.sol` contract would require adding it to an already-funded subscription via the Chainlink subscription dashboard, otherwise the `MintToRandomWinner` will not execute. Additionally, two arguments must be passed to the constructor - the subscritionId and the VRFCoordinator address.
 
 ## How To Use
 
-This section will explain the core functions for the two main contracts - `Marketplace.sol` and `EventContract.sol`. For any additional information, pelase take a look at the comments in the code of the contracts.
+This section will explain the specific functions for the two main contracts - `Marketplace.sol` and `EventContract.sol` and ommits the inherited functions. For any additional information, pelase take a look at the comments in the code of the contracts.
 
 1. `Marketplace.sol`\
    **a/** `eventContracts` a public array with a getter function, which contains all the addresses of the deployed Event contracts from the factory contract.\
    **b/** `createEventContract` - deploys a new instance of the `EventContract.sol` with the parameters provided.\
    **c/** `withdrawFundsFromEvent` - accepts a uint as an argument, which is the index of the Event contract from the `eventContracts` array. Callable only by the event organiser for the selected event contract.\
-   **d/** `MintToRandomWinner` - randomly selects a tokenId from the already minted tickets and mints one extra ticket to its owner. Here the Chainlink VRF functionality is implemented.\
+   **d/** `MintToRandomWinner` - . Accepts the same argument as the one for `withdrawFundsFromEvent` randomly selects a tokenId from the already minted tickets and mints one extra ticket to its owner. Here the Chainlink VRF functionality is implemented.\
 
 2. `EventContract.sol`\
    **a/**`mint` - allows the user to buy tickets for the event. Require statements:\
@@ -77,7 +76,7 @@ This section will explain the core functions for the two main contracts - `Marke
 
 4. Task
    I have also created a Hardhat task called `Fullcycle` that mimics the entire process of deploying the factory contract, creating an event, buying of tickets,
-   lottery draw and withdrawal of funds. It can be run by typung `npx hardhat fullcycle`.
+   lottery draw and withdrawal of funds. It can be run by typing `npx hardhat fullcycle`.
 
 ---
 
