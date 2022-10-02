@@ -48,7 +48,7 @@ First, make sure you have Goerli test ether. You can get some at: [goerlifaucet.
    **c/** Do the same for `EventContract.sol`\
    **d/** In the SOLIDITY COMPILER tab, select compiler version 0.8.7 to match the one, required by the contracts and COMPILE `Marketplace.sol`\
    **e/** Go to the DEPLOY & RUN TRANSACTIONS tab. In the Environment dropdown, select `Inejcted provider - Metamask` (could be different if you use another wallet extension but look for `injected provider`). Then go to your wallet extension dashboard and connect it to the **Goerli testnet**\
-   **f/** Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0xB6c05e5E2E78f2e90419eef2b651A05Cab4a1C50`.\
+   **f/** Back in Remix in DEPLOY & RUN TRANSACTIONS tab, in the `At address` window , paste the address `0x8e5c9A24053288CcC5ead816864c45403D9804d2`.\
    **g/** An UI with the callable functions of the contract should pop up below.\
 
    CAUTION - attempting to deploy a new `Marketplace.sol` contract would require adding it to an already-funded subscription via the Chainlink subscription dashboard, otherwise the `MintToRandomWinner` will not execute. Additionally, two arguments must be passed to the constructor - the subscritionId and the VRFCoordinator address.
